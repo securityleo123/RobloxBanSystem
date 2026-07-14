@@ -5,6 +5,8 @@ process.on("uncaughtException", console.error);
 
 const fs = require("fs");
 const path = require("path");
+const express = require("express");
+
 const {
     Client,
     Collection,
@@ -12,25 +14,34 @@ const {
     Events,
 } = require("discord.js");
 
+const db = require("./database");
+
 console.log("Starting Roblox Ban Bot...");
 
-// Check environment variables
+// ----------------------
+// Check Environment Variables
+// ----------------------
+
 if (!process.env.DISCORD_TOKEN) {
-    console.error("❌ DISCORD_TOKEN was not found in your .env file!");
+    console.error("❌ DISCORD_TOKEN missing!");
     process.exit(1);
 }
 
 if (!process.env.CLIENT_ID) {
-    console.error("❌ CLIENT_ID was not found in your .env file!");
+    console.error("❌ CLIENT_ID missing!");
     process.exit(1);
 }
 
 if (!process.env.GUILD_ID) {
-    console.error("❌ GUILD_ID was not found in your .env file!");
+    console.error("❌ GUILD_ID missing!");
     process.exit(1);
 }
 
 console.log("✅ Environment variables loaded.");
+
+// ----------------------
+// Discord Bot
+// ----------------------
 
 const client = new Client({
     intents: [GatewayIntentBits.Guilds],
@@ -48,7 +59,7 @@ for (const file of commandFiles) {
     const command = require(path.join(commandsPath, file));
 
     if (!command.data || !command.execute) {
-        console.warn(`⚠ Skipping ${file} (missing data or execute).`);
+        console.warn(`⚠ Skipping ${file}`);
         continue;
     }
 
@@ -65,7 +76,6 @@ client.on(Events.InteractionCreate, async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
     const command = client.commands.get(interaction.commandName);
-
     if (!command) return;
 
     try {
@@ -97,3 +107,79 @@ client.login(process.env.DISCORD_TOKEN)
         console.error("❌ Failed to login:");
         console.error(error);
     });
+
+// ----------------------
+// Express API
+// ----------------------
+
+const app = express();
+
+app.use(express.json());
+
+// Home page
+app.get("/", (req, res) => {
+    res.send("✅ Roblox Ban Bot API Online");
+});
+
+// Health check
+app.get("/health", (req, res) => {
+    res.json({
+        status: "online",
+        bot: client.isReady(),
+        database: "connected"
+    });
+});
+
+// Check if a Roblox user is banned
+app.get("/ban/:userId", (req, res) => {
+    const userId = req.params.userId;
+
+    db.get(
+        "SELECT * FROM bans WHERE userId = ?",
+        [userId],
+        (err, row) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).json({
+                    banned: false
+                });
+            }
+
+            if (!row) {
+                return res.json({
+                    banned: false
+                });
+            }
+
+            // Remove expired bans
+            if (row.expiresAt && Date.now() >= row.expiresAt) {
+                db.run(
+                    "DELETE FROM bans WHERE userId = ?",
+                    [userId]
+                );
+
+                return res.json({
+                    banned: false
+                });
+            }
+
+            res.json({
+                banned: true,
+                username: row.username,
+                moderator: row.moderator,
+                reason: row.reason,
+                expiresAt: row.expiresAt
+            });
+        }
+    );
+});
+
+// ----------------------
+// Start Web Server
+// ----------------------
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+    console.log(`🌐 API running on port ${PORT}`);
+});
