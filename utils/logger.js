@@ -1,20 +1,21 @@
 const { EmbedBuilder } = require("discord.js");
 
 async function logCommand(interaction, title, color, details) {
+    console.log("📝 Logger called");
+
     const channelId = process.env.LOG_CHANNEL_ID;
 
+    console.log("LOG_CHANNEL_ID:", channelId);
+
     if (!channelId) {
-        console.log("❌ LOG_CHANNEL_ID is missing.");
+        console.log("❌ LOG_CHANNEL_ID is missing!");
         return;
     }
 
     try {
         const channel = await interaction.client.channels.fetch(channelId);
 
-        if (!channel) {
-            console.log("❌ Log channel not found.");
-            return;
-        }
+        console.log("Fetched channel:", channel?.name);
 
         const embed = new EmbedBuilder()
             .setColor(color)
@@ -24,30 +25,29 @@ async function logCommand(interaction, title, color, details) {
                 {
                     name: "Moderator",
                     value: `${interaction.user.tag}\n(${interaction.user.id})`,
-                    inline: true
+                    inline: true,
                 },
                 {
                     name: "Server",
                     value: interaction.guild?.name ?? "DM",
-                    inline: true
+                    inline: true,
                 },
                 {
                     name: "Details",
-                    value: details
+                    value: details,
                 }
             )
             .setTimestamp();
 
-        await channel.send({
-            embeds: [embed]
-        });
+        await channel.send({ embeds: [embed] });
 
-        console.log("✅ Command log sent.");
+        console.log("✅ Log sent successfully!");
     } catch (err) {
-        console.error("❌ Failed to send command log:", err);
+        console.error("❌ Logger Error:");
+        console.error(err);
     }
 }
 
 module.exports = {
-    logCommand
+    logCommand,
 };
