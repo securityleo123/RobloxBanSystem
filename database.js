@@ -2,13 +2,14 @@ const sqlite3 = require("sqlite3").verbose();
 
 const db = new sqlite3.Database("./bans.db", (err) => {
     if (err) {
-        console.error(err);
+        console.error("❌ SQLite Error:", err);
     } else {
-        console.log("✅ Connected to SQLite database.");
+        console.log("✅ Connected to SQLite.");
     }
 });
 
 db.serialize(() => {
+
     db.run(`
         CREATE TABLE IF NOT EXISTS bans (
             userId TEXT PRIMARY KEY,
@@ -20,6 +21,7 @@ db.serialize(() => {
             expiresAt INTEGER
         )
     `);
+
 });
 
 module.exports = db;
