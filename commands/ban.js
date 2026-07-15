@@ -7,6 +7,7 @@ const db = require("../database");
 const { parseDuration } = require("../utils");
 const { hasModeratorRole } = require("../utils/permissions");
 const { getRobloxUser } = require("../utils/roblox");
+const { logCommand } = require("../utils/logger");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -33,10 +34,8 @@ module.exports = {
 
     async execute(interaction) {
 
-        // Reply immediately so the interaction doesn't expire
         await interaction.deferReply();
 
-        // Check moderator role
         if (!hasModeratorRole(interaction)) {
             return interaction.editReply({
                 content: "❌ You do not have permission to use this command."
@@ -55,7 +54,6 @@ module.exports = {
             });
         }
 
-        // Look up Roblox user
         const robloxUser = await getRobloxUser(username);
 
         if (!robloxUser) {
@@ -93,49 +91,28 @@ module.exports = {
                     .setColor(0xff0000)
                     .setTitle("🔨 Roblox Player Banned")
                     .addFields(
-                        {
-                            name: "Username",
-                            value: robloxUser.name,
-                            inline: true
-                        },
-                        {
-                            name: "Display Name",
-                            value: robloxUser.displayName,
-                            inline: true
-                        },
-                        {
-                            name: "User ID",
-                            value: userId,
-                            inline: true
-                        },
-                        {
-                            name: "Duration",
-                            value: duration,
-                            inline: true
-                        },
-                        {
-                            name: "Reason",
-                            value: reason,
-                            inline: false
-                        },
-                        {
-                            name: "Moderator",
-                            value: interaction.user.tag,
-                            inline: true
-                        },
-                        {
-                            name: "Expires",
-                            value: expiresAt
-                                ? `<t:${Math.floor(expiresAt / 1000)}:F>`
-                                : "Permanent",
-                            inline: true
-                        }
+                        { name: "Username", value: robloxUser.name, inline: true },
+                        { name: "Display Name", value: robloxUser.displayName, inline: true },
+                        { name: "User ID", value: userId, inline: true },
+                        { name: "Duration", value: duration, inline: true },
+                        { name: "Reason", value: reason },
+                        { name: "Moderator", value: interaction.user.tag }
                     )
                     .setTimestamp();
 
                 await interaction.editReply({
                     embeds: [embed]
                 });
+
+                await logCommand(
+                    interaction,
+                    "🔨 Roblox Player Banned",
+                    0xff0000,
+                    `**Player:** ${robloxUser.name}
+**User ID:** ${userId}
+**Duration:** ${duration}
+**Reason:** ${reason}`
+                );
             }
         );
     }
