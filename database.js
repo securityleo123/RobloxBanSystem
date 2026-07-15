@@ -11,11 +11,13 @@ const db = new sqlite3.Database("./bans.db", (err) => {
 db.serialize(() => {
     db.run(`
         CREATE TABLE IF NOT EXISTS bans (
-            userid TEXT PRIMARY KEY,
-            duration TEXT,
-            reason TEXT,
-            moderator TEXT,
-            bannedAt INTEGER
+            userId TEXT PRIMARY KEY,
+            username TEXT NOT NULL,
+            moderator TEXT NOT NULL,
+            reason TEXT NOT NULL,
+            duration TEXT NOT NULL,
+            bannedAt INTEGER NOT NULL,
+            expiresAt INTEGER
         )
     `);
 });
