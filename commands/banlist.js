@@ -8,7 +8,7 @@ const { hasModeratorRole } = require("../utils/permissions");
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName("banlist")
+        .setName("robloxbanlist")
         .setDescription("View all active Roblox bans"),
 
     async execute(interaction) {

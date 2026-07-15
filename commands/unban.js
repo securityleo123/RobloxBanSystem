@@ -10,7 +10,7 @@ const { logCommand } = require("../utils/logger");
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName("unban")
+        .setName("rounban")
         .setDescription("Unban a Roblox player")
         .addStringOption(option =>
             option
